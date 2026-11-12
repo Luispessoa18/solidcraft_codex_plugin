@@ -1,0 +1,6 @@
+{
+  "id": "codex-control",
+  "name": "Codex Control (ponte MCP externa)",
+  "version": "1.0.0",
+  "description": "Pacote de configuracao para o MCP nativo. A pasta Plugins apenas lista este pacote; execute instalar.cmd e inicie o SolidCraft com iniciar.cmd. Nao e um plugin executavel."
+}

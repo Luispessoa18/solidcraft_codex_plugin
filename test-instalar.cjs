@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const {spawnSync} = require('node:child_process');
+const {findSolidCraft} = require('./caminhos.cjs');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'solidcraft-codex-test-'));
+const home = path.join(root, 'codex');
+fs.mkdirSync(home);
+const config = path.join(home, 'config.toml');
+const original = 'model = "example"\n[mcp_servers.other]\ncommand = "other"\n[mcp_servers.solidcraft-live]\ncommand = "old"\n[projects.example]\ntrust_level = "trusted"\n';
+fs.writeFileSync(config, original);
+function install() {
+ const r=spawnSync(process.execPath,[path.join(__dirname,'instalar.cjs')],{encoding:'utf8',env:{...process.env,CODEX_HOME:home,LOCALAPPDATA:path.join(root,'local'),SOLIDCRAFT_CLI:findSolidCraft().cli}});
+ assert.equal(r.status,0,r.stderr);
+}
+install();
+const first=fs.readFileSync(config,'utf8');
+assert(first.includes('[mcp_servers.other]\ncommand = "other"'));
+assert(first.includes('[projects.example]\ntrust_level = "trusted"'));
+assert.equal((first.match(/\[mcp_servers\.solidcraft-live\]/g)||[]).length,1);
+assert(first.includes('127.0.0.1:7878'));
+const backups=fs.readdirSync(home).filter(n=>n.startsWith('config.toml.backup-'));
+assert.equal(backups.length,1);
+assert.equal(fs.readFileSync(path.join(home,backups[0]),'utf8'),original);
+install();
+assert.equal(fs.readFileSync(config,'utf8'),first);
+assert.equal(fs.readdirSync(home).filter(n=>n.startsWith('config.toml.backup-')).length,1);
+assert(fs.existsSync(path.join(root,'local','SolidCraft','plugins','codex-control','iniciar.cmd')));
+console.log('OK: preservacao, backup, instalacao e idempotencia. Pasta de teste: '+root);
